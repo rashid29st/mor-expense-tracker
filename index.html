@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOR - Expense Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #fff;
+            --input-bg: #fff;
+            --border-color: #ddd;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --error-color: #dc3545;
+            --success-color: #28a745;
+        }
+
+        .dark-mode {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --background-color: #121212;
+            --text-color: #f0f0f0;
+            --card-bg: #1e1e1e;
+            --input-bg: #2d2d2d;
+            --border-color: #444;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --error-color: #ff6b6b;
+            --success-color: #4caf50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+        }
+
+        .theme-toggle:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        .card-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .balance-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .balance {
+            text-align: center;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: var(--input-bg);
+            flex: 1;
+        }
+
+        .balance-title {
+            font-size: 14px;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .balance-amount {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .available {
+            color: var(--success-color);
+        }
+
+        .expense {
+            color: var(--error-color);
+        }
+
+        .recent-expenses {
+            margin-top: 20px;
+            height: 300px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .expense-item:last-child {
+            border-bottom: none;
+        }
+
+        .expense-category {
+            font-weight: 500;
+        }
+
+        .expense-amount {
+            font-weight: bold;
+        }
+
+        .expense-date {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 3px;
+        }
+
+        .menu-button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            margin-left: 15px;
+            padding: 8px;
+            border-radius: 50%;
+        }
+
+        .menu-button:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background-color: var(--card-bg);
+            box-shadow: -2px 0 10px var(--shadow-color);
+            z-index: 1000;
+            transition: right 0.3s;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .menu.active {
+            right: 0;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .menu-title {
+            font-size: 20px;
+            color: var(--primary-color);
+        }
+
+        .close-menu {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+        }
+
+        .close-menu:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-nav {
+            margin-bottom: 20px;
+        }
+
+        .menu-nav-item {
+            display: block;
+            padding: 12px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            color: var(--text-color);
+            text-decoration: none;
+            background-color: var(--input-bg);
+            transition: background-color 0.2s;
+        }
+
+        .menu-nav-item:hover {
+            background-color: rgba(74, 111, 165, 0.2);
+        }
+
+        .menu-nav-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .menu-nav-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .menu-content {
+            display: none;
+        }
+
+        .menu-content.active {
+            display: block;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            height: 300px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        /* Error and Toast Styles */
+        .error-message {
+            color: var(--error-color);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .error {
+            border-color: var(--error-color) !important;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 4px;
+            color: white;
+            z-index: 1001;
+            animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
+            max-width: 300px;
+        }
+
+        .toast.success {
+            background-color: var(--success-color);
+        }
+
+        .toast.error {
+            background-color: var(--error-color);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; }
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+
+        .pagination button {
+            min-width: 80px;
+        }
+
+        /* Budget Styles */
+        .budget-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .budget-progress {
+            height: 5px;
+            background-color: var(--border-color);
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .budget-progress-bar {
+            height: 100%;
+            background-color: var(--success-color);
+        }
+
+        /* Report Table Styles */
+        .column-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        .column-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .report-table th, .report-table td {
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+        
+        .report-table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .report-table tr:nth-child(even) {
+            background-color: var(--input-bg);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .balance-container {
+                flex-direction: column;
+            }
+            
+            .menu {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .menu.active {
+                right: 0;
+            }
+
+            .column-options {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        /* SVG Animation */
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .logo-circle {
+            animation: rotate 8s linear infinite;
+            transform-origin: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#4a6fa5" stroke-width="3" class="logo-circle"/>
+                    <path d="M30,30 L70,30 L70,70 L30,70 Z" fill="none" stroke="#166088" stroke-width="3"/>
+                    <text x="50" y="55" font-family="Arial" font-size="30" fill="#4a6fa5" text-anchor="middle" font-weight="bold">MOR</text>
+                </svg>
+                <div class="logo-text">MOR</div>
+            </div>
+            <div>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="menu-button" id="menuButton" aria-label="Open menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2 class="card-title">Add Expense</h2>
+                <form id="expenseForm">
+                    <div class="form-group">
+                        <label for="expenseDate">Date</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseCategory">Category</label>
+                        <input type="text" id="expenseCategory" placeholder="Enter category" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseAmount">Amount</label>
+                        <input type="number" id="expenseAmount" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseDescription">Description</label>
+                        <input type="text" id="expenseDescription" placeholder="Optional">
+                    </div>
+                    <button type="submit">Add Expense</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Summary</h2>
+                <div class="balance-container">
+                    <div class="balance">
+                        <div class="balance-title">Available Balance</div>
+                        <div class="balance-amount available" id="availableBalance">$0.00</div>
+                    </div>
+                    <div class="balance">
+                        <div class="balance-title">Monthly Expense</div>
+                        <div class="balance-amount expense" id="monthlyExpense">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+
+                <div class="recent-expenses" id="recentExpensesContainer">
+                    <h3>Recent Expenses</h3>
+                    <div id="recentExpensesList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <div class="menu" id="menu">
+        <div class="menu-header">
+            <div class="menu-title">MOR Menu</div>
+            <button class="close-menu" id="closeMenu" aria-label="Close menu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="menu-nav">
+            <a href="#" class="menu-nav-item active" data-content="summary">
+                <i class="fas fa-chart-pie"></i> Summary
+            </a>
+            <a href="#" class="menu-nav-item" data-content="reports">
+                <i class="fas fa-file-alt"></i> Reports
+            </a>
+            <a href="#" class="menu-nav-item" data-content="balance">
+                <i class="fas fa-wallet"></i> Balance Settings
+            </a>
+            <a href="#" class="menu-nav-item" data-content="budgets">
+                <i class="fas fa-chart-line"></i> Budgets
+            </a>
+            <a href="#" class="menu-nav-item" data-content="backup">
+                <i class="fas fa-database"></i> Data Backup
+            </a>
+        </div>
+
+        <div class="menu-content active" id="summaryContent">
+            <h3>Monthly Summary</h3>
+            <div class="balance-container">
+                <div class="balance">
+                    <div class="balance-title">Available Balance</div>
+                    <div class="balance-amount available" id="menuAvailableBalance">$0.00</div>
+                </div>
+                <div class="balance">
+                    <div class="balance-title">Monthly Expense</div>
+                    <div class="balance-amount expense" id="menuMonthlyExpense">$0.00</div>
+                </div>
+            </div>
+            
+            <div class="chart-container" style="height: 200px;">
+                <canvas id="menuExpenseChart"></canvas>
+            </div>
+            
+            <div class="recent-expenses">
+                <h3>Top Categories</h3>
+                <div id="topCategoriesList">
+                    <div class="no-data">No expenses recorded yet</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-content" id="reportsContent">
+            <h3>Generate Custom Report</h3>
+            <div class="form-group">
+                <label for="reportStartDate">Start Date</label>
+                <input type="date" id="reportStartDate">
+            </div>
+            <div class="form-group">
+                <label for="reportEndDate">End Date</label>
+                <input type="date" id="reportEndDate">
+            </div>
+            
+            <div class="form-group">
+                <label>Columns to Include:</label>
+                <div class="column-options">
+                    <label><input type="checkbox" name="reportColumns" value="serial" checked> #</label>
+                    <label><input type="checkbox" name="reportColumns" value="date" checked> Date</label>
+                    <label><input type="checkbox" name="reportColumns" value="category" checked> Category</label>
+                    <label><input type="checkbox" name="reportColumns" value="amount" checked> Amount</label>
+                    <label><input type="checkbox" name="reportColumns" value="description"> Description</label>
+                </div>
+            </div>
+            
+            <button id="generateReport">Generate Report</button>
+            
+            <div id="reportResults" style="margin-top: 20px;">
+                <!-- Report results will be displayed here -->
+            </div>
+        </div>
+
+        <div class="menu-content" id="balanceContent">
+            <h3>Set Available Balance</h3>
+            <div class="form-group">
+                <label for="initialBalance">Available Balance</label>
+                <input type="number" id="initialBalance" min="0" step="0.01">
+            </div>
+            <button id="saveBalance">Save Balance</button>
+            
+            <div class="recent-expenses" style="margin-top: 20px;">
+                <h3>Balance History</h3>
+                <div id="balanceHistory">
+                    <div class="no-data">No balance history available</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-content" id="budgetsContent">
+            <h3>Category Budgets</h3>
+            <div class="form-group">
+                <label for="budgetCategory">Category</label>
+                <input type="text" id="budgetCategory" placeholder="Enter category name">
+            </div>
+            <div class="form-group">
+                <label for="budgetAmount">Budget Amount</label>
+                <input type="number" id="budgetAmount" min="0" step="0.01" placeholder="Enter budget amount">
+            </div>
+            <button id="saveBudget">Set Budget</button>
+            
+            <div class="recent-expenses" style="margin-top: 20px;">
+                <h3>Current Budgets</h3>
+                <div id="budgetsList">
+                    <div class="no-data">No budgets set yet</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-content" id="backupContent">
+            <h3>Data Backup & Restore</h3>
+            <button id="exportData" style="width: 100%; margin-bottom: 15px;">
+                <i class="fas fa-download"></i> Export Data
+            </button>
+            
+            <div class="form-group">
+                <label for="importData">Import Data</label>
+                <input type="file" id="importData" accept=".json">
+            </div>
+            
+            <button id="clearData" style="width: 100%; margin-top: 20px; background-color: var(--error-color);">
+                <i class="fas fa-trash"></i> Clear All Data
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Main App Module
+        const MORExpenseTracker = (function() {
+            // DOM Elements
+            const elements = {
+                expenseForm: document.getElementById('expenseForm'),
+                expenseDate: document.getElementById('expenseDate'),
+                expenseCategory: document.getElementById('expenseCategory'),
+                expenseAmount: document.getElementById('expenseAmount'),
+                expenseDescription: document.getElementById('expenseDescription'),
+                availableBalance: document.getElementById('availableBalance'),
+                monthlyExpense: document.getElementById('monthlyExpense'),
+                recentExpensesList: document.getElementById('recentExpensesList'),
+                recentExpensesContainer: document.getElementById('recentExpensesContainer'),
+                themeToggle: document.getElementById('themeToggle'),
+                menuButton: document.getElementById('menuButton'),
+                closeMenu: document.getElementById('closeMenu'),
+                menu: document.getElementById('menu'),
+                overlay: document.getElementById('overlay'),
+                generateReport: document.getElementById('generateReport'),
+                reportStartDate: document.getElementById('reportStartDate'),
+                reportEndDate: document.getElementById('reportEndDate'),
+                reportResults: document.getElementById('reportResults'),
+                initialBalance: document.getElementById('initialBalance'),
+                saveBalance: document.getElementById('saveBalance'),
+                balanceHistory: document.getElementById('balanceHistory'),
+                menuAvailableBalance: document.getElementById('menuAvailableBalance'),
+                menuMonthlyExpense: document.getElementById('menuMonthlyExpense'),
+                topCategoriesList: document.getElementById('topCategoriesList'),
+                budgetCategory: document.getElementById('budgetCategory'),
+                budgetAmount: document.getElementById('budgetAmount'),
+                saveBudget: document.getElementById('saveBudget'),
+                budgetsList: document.getElementById('budgetsList'),
+                exportData: document.getElementById('exportData'),
+                importData: document.getElementById('importData'),
+                clearData: document.getElementById('clearData')
+            };
+
+            // Charts
+            let expenseChart, menuExpenseChart;
+
+            // Initialize the app
+            function init() {
+                setupEventListeners();
+                initCharts();
+                setTodayDate();
+                checkTheme();
+                initDB().then(() => {
+                    loadInitialData();
+                });
+            }
+
+            // Database functions
+            let db;
+            const DB_NAME = 'MORExpenseTracker';
+            const DB_VERSION = 2;
+            const STORE_NAMES = {
+                EXPENSES: 'expenses',
+                BALANCE: 'balance',
+                BUDGETS: 'budgets'
+            };
+
+            function initDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                    request.onupgradeneeded = (event) => {
+                        db = event.target.result;
+                        
+                        // Create stores if they don't exist
+                        if (!db.objectStoreNames.contains(STORE_NAMES.EXPENSES)) {
+                            const expensesStore = db.createObjectStore(STORE_NAMES.EXPENSES, { keyPath: 'id' });
+                            expensesStore.createIndex('monthYear', 'monthYear', { unique: false });
+                            expensesStore.createIndex('category', 'category', { unique: false });
+                            expensesStore.createIndex('date', 'date', { unique: false });
+                        }
+                        
+                        if (!db.objectStoreNames.contains(STORE_NAMES.BALANCE)) {
+                            const balanceStore = db.createObjectStore(STORE_NAMES.BALANCE, { keyPath: 'id' });
+                            balanceStore.createIndex('date', 'date', { unique: false });
+                        }
+                        
+                        if (!db.objectStoreNames.contains(STORE_NAMES.BUDGETS)) {
+                            db.createObjectStore(STORE_NAMES.BUDGETS, { keyPath: 'category' });
+                        }
+                    };
+
+                    request.onsuccess = (event) => {
+                        db = event.target.result;
+                        resolve(db);
+                    };
+
+                    request.onerror = (event) => {
+                        reject('IndexedDB error: ' + event.target.error);
+                    };
+                });
+            }
+
+            function saveExpense(expense) {
+                return new Promise((resolve, reject) => {
+                    expense.monthYear = getMonthYearFromDate(expense.date);
+                    const transaction = db.transaction([STORE_NAMES.EXPENSES], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAMES.EXPENSES);
+                    const request = store.put(expense);
+
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function getExpensesByMonth(monthYear) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAMES.EXPENSES], 'readonly');
+                    const store = transaction.objectStore(STORE_NAMES.EXPENSES);
+                    const index = store.index('monthYear');
+                    const request = index.getAll(IDBKeyRange.only(monthYear));
+
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function getAllExpenses() {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAMES.EXPENSES], 'readonly');
+                    const store = transaction.objectStore(STORE_NAMES.EXPENSES);
+                    const request = store.getAll();
+
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function getExpensesByDateRange(startDate, endDate) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAMES.EXPENSES], 'readonly');
+                    const store = transaction.objectStore(STORE_NAMES.EXPENSES);
+                    const index = store.index('date');
+                    const range = IDBKeyRange.bound(startDate, endDate);
+                    const request = index.getAll(range);
+
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function saveBalanceHistory(balanceEntry) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAMES.BALANCE], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAMES.BALANCE);
+                    const request = store.put(balanceEntry);
+
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function getBalanceHistory() {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAMES.BALANCE], 'readonly');
+                    const store = transaction.objectStore(STORE_NAMES.BALANCE);
+                    const request = store.getAll();
+
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function saveBudget(budget) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAMES.BUDGETS], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAMES.BUDGETS);
+                    const request = store.put(budget);
+
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function getBudgets() {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAMES.BUDGETS], 'readonly');
+                    const store = transaction.objectStore(STORE_NAMES.BUDGETS);
+                    const request = store.getAll();
+
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function deleteBudget(category) {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAMES.BUDGETS], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAMES.BUDGETS);
+                    const request = store.delete(category);
+
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            function clearAllData() {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(
+                        [STORE_NAMES.EXPENSES, STORE_NAMES.BALANCE, STORE_NAMES.BUDGETS], 
+                        'readwrite'
+                    );
+                    
+                    transaction.objectStore(STORE_NAMES.EXPENSES).clear();
+                    transaction.objectStore(STORE_NAMES.BALANCE).clear();
+                    transaction.objectStore(STORE_NAMES.BUDGETS).clear();
+                    
+                    transaction.oncomplete = () => resolve();
+                    transaction.onerror = (event) => reject(event.target.error);
+                });
+            }
+
+            // Chart functions
+            function initCharts() {
+                const expenseChartCtx = document.getElementById('expenseChart').getContext('2d');
+                const menuExpenseChartCtx = document.getElementById('menuExpenseChart').getContext('2d');
+
+                expenseChart = new Chart(expenseChartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Expenses by Category',
+                            data: [],
+                            backgroundColor: '#4a6fa5',
+                            borderColor: '#166088',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: document.body.classList.contains('dark-mode') ? 
+                                        'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    color: document.body.classList.contains('dark-mode') ? 
+                                        '#f0f0f0' : '#666'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: document.body.classList.contains('dark-mode') ? 
+                                        'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    color: document.body.classList.contains('dark-mode') ? 
+                                        '#f0f0f0' : '#666'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                menuExpenseChart = new Chart(menuExpenseChartCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: [
+                                '#4a6fa5',
+                                '#166088',
+                                '#28a745',
+                                '#dc3545',
+                                '#ffc107',
+                                '#17a2b8',
+                                '#6f42c1',
+                                '#fd7e14'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    color: document.body.classList.contains('dark-mode') ? 
+                                        '#f0f0f0' : '#666'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateChartTheme() {
+                const isDark = document.body.classList.contains('dark-mode');
+                
+                if (expenseChart) {
+                    expenseChart.options.scales.x.grid.color = isDark ? 
+                        'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                    expenseChart.options.scales.y.grid.color = isDark ? 
+                        'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                    expenseChart.options.scales.x.ticks.color = isDark ? 
+                        '#f0f0f0' : '#666';
+                    expenseChart.options.scales.y.ticks.color = isDark ? 
+                        '#f0f0f0' : '#666';
+                    expenseChart.update();
+                }
+                
+                if (menuExpenseChart) {
+                    menuExpenseChart.options.plugins.legend.labels.color = isDark ? 
+                        '#f0f0f0' : '#666';
+                    menuExpenseChart.update();
+                }
+            }
+
+            // Virtual Scrolling
+            class VirtualScroll {
+                constructor(container, itemHeight, totalItems, renderItem) {
+                    this.container = container;
+                    this.itemHeight = itemHeight;
+                    this.totalItems = totalItems;
+                    this.renderItem = renderItem;
+                    this.visibleItems = Math.ceil(container.clientHeight / itemHeight) + 2;
+                    this.startIndex = 0;
+                    
+                    this.scroller = document.createElement('div');
+                    this.scroller.style.height = `${totalItems * itemHeight}px`;
+                    this.scroller.style.position = 'relative';
+                    
+                    this.content = document.createElement('div');
+                    this.content.style.position = 'absolute';
+                    this.content.style.top = '0';
+                    this.content.style.width = '100%';
+                    
+                    this.scroller.appendChild(this.content);
+                    container.appendChild(this.scroller);
+                    
+                    this.container.addEventListener('scroll', this.handleScroll.bind(this));
+                    this.updateVisibleItems();
+                }
+
+                handleScroll() {
+                    const scrollTop = this.container.scrollTop;
+                    const newStartIndex = Math.floor(scrollTop / this.itemHeight);
+                    
+                    if (newStartIndex !== this.startIndex) {
+                        this.startIndex = newStartIndex;
+                        this.updateVisibleItems();
+                    }
+                }
+
+                updateVisibleItems() {
+                    const endIndex = Math.min(this.startIndex + this.visibleItems, this.totalItems);
+                    
+                    // Calculate the visible items
+                    const items = [];
+                    for (let i = this.startIndex; i < endIndex; i++) {
+                        items.push(this.renderItem(i));
+                    }
+                    
+                    this.content.innerHTML = items.join('');
+                    this.content.style.top = `${this.startIndex * this.itemHeight}px`;
+                }
+            }
+
+            // Web Worker for report generation
+            function createReportWorker() {
+                const workerCode = `
+                    self.onmessage = function(e) {
+                        const { action, data } = e.data;
+                        
+                        if (action === 'calculateReport') {
+                            const { expenses, startDate, endDate } = data;
+                            const result = {
+                                total: 0,
+                                byCategory: {},
+                                count: expenses.length
+                            };
+                            
+                            expenses.forEach(expense => {
+                                if (expense.date >= startDate && expense.date <= endDate) {
+                                    result.total += expense.amount;
+                                    result.byCategory[expense.category] = 
+                                        (result.byCategory[expense.category] || 0) + expense.amount;
+                                }
+                            });
+                            
+                            self.postMessage({ 
+                                action: 'reportCalculated', 
+                                result 
+                            });
+                        }
+                    };
+                `;
+
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                return new Worker(URL.createObjectURL(blob));
+            }
+
+            const reportWorker = createReportWorker();
+
+            function generateReportWithWorker(startDate, endDate) {
+                return new Promise((resolve) => {
+                    getAllExpenses().then(expenses => {
+                        reportWorker.postMessage({
+                            action: 'calculateReport',
+                            data: { expenses, startDate, endDate }
+                        });
+                        
+                        reportWorker.onmessage = function(e) {
+                            if (e.data.action === 'reportCalculated') {
+                                resolve(e.data.result);
+                            }
+                        };
+                    });
+                });
+            }
+
+            // UI Functions
+            function setupEventListeners() {
+                // Theme toggle
+                elements.themeToggle.addEventListener('click', toggleTheme);
+
+                // Menu toggle
+                elements.menuButton.addEventListener('click', openMenu);
+                elements.closeMenu.addEventListener('click', closeMenu);
+                elements.overlay.addEventListener('click', closeMenu);
+
+                // Menu navigation
+                document.querySelectorAll('.menu-nav-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        // Remove active class from all items
+                        document.querySelectorAll('.menu-nav-item').forEach(navItem => {
+                            navItem.classList.remove('active');
+                        });
+                        
+                        // Add active class to clicked item
+                        this.classList.add('active');
+                        
+                        // Hide all content
+                        document.querySelectorAll('.menu-content').forEach(content => {
+                            content.classList.remove('active');
+                        });
+                        
+                        // Show corresponding content
+                        const contentId = this.getAttribute('data-content') + 'Content';
+                        document.getElementById(contentId).classList.add('active');
+                        
+                        // Load specific content if needed
+                        if (contentId === 'balanceContent') {
+                            loadBalanceHistory();
+                        } else if (contentId === 'budgetsContent') {
+                            loadBudgets();
+                        }
+                    });
+                });
+
+                // Form submission
+                elements.expenseForm.addEventListener('submit', handleExpenseSubmit);
+
+                // Report generation
+                elements.generateReport.addEventListener('click', handleGenerateReport);
+
+                // Balance management
+                elements.saveBalance.addEventListener('click', handleSaveBalance);
+
+                // Budget management
+                elements.saveBudget.addEventListener('click', handleSaveBudget);
+
+                // Data backup
+                elements.exportData.addEventListener('click', handleExportData);
+                elements.importData.addEventListener('change', handleImportData);
+                elements.clearData.addEventListener('click', handleClearData);
+            }
+
+            function setTodayDate() {
+                const today = new Date();
+                elements.expenseDate.valueAsDate = today;
+                elements.reportStartDate.valueAsDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                elements.reportEndDate.valueAsDate = today;
+            }
+
+            function checkTheme() {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    elements.themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                }
+            }
+
+            function toggleTheme() {
+                document.body.classList.toggle('dark-mode');
+                if (document.body.classList.contains('dark-mode')) {
+                    elements.themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    elements.themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                    localStorage.setItem('theme', 'light');
+                }
+                updateChartTheme();
+            }
+
+            function openMenu() {
+                elements.menu.classList.add('active');
+                elements.overlay.classList.add('active');
+                updateMenuSummary();
+            }
+
+            function closeMenu() {
+                elements.menu.classList.remove('active');
+                elements.overlay.classList.remove('active');
+            }
+
+            // Data Loading Functions
+            function loadInitialData() {
+                const currentMonthYear = getCurrentMonthYear();
+                getExpensesByMonth(currentMonthYear)
+                    .then(expenses => {
+                        updateBalances(expenses);
+                        updateRecentExpenses(expenses);
+                        updateChartData(expenses);
+                    })
+                    .catch(error => {
+                        console.error('Error loading expenses:', error);
+                        showToast('Error loading expenses', 'error');
+                    });
+                
+                loadInitialBalance();
+            }
+
+            function updateBalances(expenses) {
+                const totalExpense = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+                const initialBalance = getCurrentBalance();
+                
+                const available = initialBalance - totalExpense;
+                
+                elements.availableBalance.textContent = `$${available.toFixed(2)}`;
+                elements.monthlyExpense.textContent = `$${totalExpense.toFixed(2)}`;
+                elements.menuAvailableBalance.textContent = `$${available.toFixed(2)}`;
+                elements.menuMonthlyExpense.textContent = `$${totalExpense.toFixed(2)}`;
+            }
+
+            function updateRecentExpenses(expenses) {
+                if (expenses.length === 0) {
+                    elements.recentExpensesList.innerHTML = '<div class="no-data">No expenses recorded yet</div>';
+                    return;
+                }
+                
+                // Sort by date descending
+                const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // Use virtual scrolling for large lists
+                if (sortedExpenses.length > 20) {
+                    setupVirtualScroll(sortedExpenses);
+                } else {
+                    renderExpensesList(sortedExpenses.slice(0, 20));
+                }
+            }
+
+            function setupVirtualScroll(expenses) {
+                elements.recentExpensesList.innerHTML = '';
+                
+                const itemHeight = 60; // Height of each expense item in pixels
+                new VirtualScroll(
+                    elements.recentExpensesContainer,
+                    itemHeight,
+                    expenses.length,
+                    (index) => {
+                        const expense = expenses[index];
+                        return `
+                            <div class="expense-item" style="height: ${itemHeight}px">
+                                <div>
+                                    <div class="expense-category">${expense.category}</div>
+                                    <div class="expense-date">${formatDate(expense.date)}</div>
+                                </div>
+                                <div class="expense-amount">$${expense.amount.toFixed(2)}</div>
+                            </div>
+                        `;
+                    }
+                );
+            }
+
+            function renderExpensesList(expenses) {
+                elements.recentExpensesList.innerHTML = '';
+                
+                if (expenses.length === 0) {
+                    elements.recentExpensesList.innerHTML = '<div class="no-data">No expenses recorded yet</div>';
+                    return;
+                }
+                
+                expenses.forEach(expense => {
+                    const expenseItem = document.createElement('div');
+                    expenseItem.className = 'expense-item';
+                    expenseItem.innerHTML = `
+                        <div>
+                            <div class="expense-category">${expense.category}</div>
+                            <div class="expense-date">${formatDate(expense.date)}</div>
+                        </div>
+                        <div class="expense-amount">$${expense.amount.toFixed(2)}</div>
+                    `;
+                    elements.recentExpensesList.appendChild(expenseItem);
+                });
+            }
+
+            function updateChartData(expenses) {
+                const categories = [...new Set(expenses.map(expense => expense.category))];
+                const amountsByCategory = {};
+                
+                categories.forEach(category => {
+                    amountsByCategory[category] = expenses
+                        .filter(expense => expense.category === category)
+                        .reduce((sum, expense) => sum + expense.amount, 0);
+                });
+                
+                // Sort categories by amount (descending)
+                const sortedCategories = categories.sort((a, b) => amountsByCategory[b] - amountsByCategory[a]);
+                
+                // Update main chart
+                expenseChart.data.labels = sortedCategories;
+                expenseChart.data.datasets[0].data = sortedCategories.map(category => amountsByCategory[category]);
+                expenseChart.update();
+                
+                // Update menu chart (top 8 categories)
+                menuExpenseChart.data.labels = sortedCategories.slice(0, 8);
+                menuExpenseChart.data.datasets[0].data = sortedCategories.slice(0, 8).map(category => amountsByCategory[category]);
+                menuExpenseChart.update();
+                
+                // Update top categories list
+                updateTopCategoriesList(sortedCategories, amountsByCategory);
+            }
+
+            function updateTopCategoriesList(categories, amountsByCategory) {
+                if (categories.length === 0) {
+                    elements.topCategoriesList.innerHTML = '<div class="no-data">No expenses recorded yet</div>';
+                    return;
+                }
+                
+                elements.topCategoriesList.innerHTML = '';
+                categories.slice(0, 5).forEach(category => {
+                    const categoryItem = document.createElement('div');
+                    categoryItem.className = 'expense-item';
+                    categoryItem.innerHTML = `
+                        <div class="expense-category">${category}</div>
+                        <div class="expense-amount">$${amountsByCategory[category].toFixed(2)}</div>
+                    `;
+                    elements.topCategoriesList.appendChild(categoryItem);
+                });
+            }
+
+            function updateMenuSummary() {
+                const currentMonthYear = getCurrentMonthYear();
+                getExpensesByMonth(currentMonthYear)
+                    .then(expenses => {
+                        updateBalances(expenses);
+                        updateChartData(expenses);
+                    })
+                    .catch(error => {
+                        console.error('Error updating menu summary:', error);
+                    });
+            }
+
+            // Balance Functions
+            function getCurrentBalance() {
+                return parseFloat(localStorage.getItem('currentBalance')) || 0;
+            }
+
+            function setCurrentBalance(balance) {
+                localStorage.setItem('currentBalance', balance.toString());
+            }
+
+            function loadInitialBalance() {
+                const balance = getCurrentBalance();
+                if (balance > 0) {
+                    elements.initialBalance.placeholder = `Current: $${balance.toFixed(2)}`;
+                }
+            }
+
+            function loadBalanceHistory() {
+                getBalanceHistory()
+                    .then(history => {
+                        if (history.length === 0) {
+                            elements.balanceHistory.innerHTML = '<div class="no-data">No balance history available</div>';
+                            return;
+                        }
+                        
+                        elements.balanceHistory.innerHTML = '';
+                        history.slice().reverse().forEach(entry => {
+                            const historyItem = document.createElement('div');
+                            historyItem.className = 'expense-item';
+                            historyItem.innerHTML = `
+                                <div class="expense-date">${formatDate(entry.date)}</div>
+                                <div class="expense-amount available">$${entry.amount.toFixed(2)}</div>
+                            `;
+                            elements.balanceHistory.appendChild(historyItem);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading balance history:', error);
+                        showToast('Error loading balance history', 'error');
+                    });
+            }
+
+            // Budget Functions
+            function loadBudgets() {
+                getBudgets()
+                    .then(budgets => {
+                        if (budgets.length === 0) {
+                            elements.budgetsList.innerHTML = '<div class="no-data">No budgets set yet</div>';
+                            return;
+                        }
+                        
+                        elements.budgetsList.innerHTML = '';
+                        budgets.forEach(budget => {
+                            const budgetItem = document.createElement('div');
+                            budgetItem.className = 'budget-item';
+                            
+                            // Calculate spending for this category
+                            getExpensesByMonth(getCurrentMonthYear())
+                                .then(expenses => {
+                                    const categoryExpenses = expenses
+                                        .filter(e => e.category === budget.category)
+                                        .reduce((sum, e) => sum + e.amount, 0);
+                                    
+                                    const percentage = Math.min((categoryExpenses / budget.amount) * 100, 100);
+                                    
+                                    budgetItem.innerHTML = `
+                                        <div>
+                                            <div>${budget.category}</div>
+                                            <div>$${categoryExpenses.toFixed(2)} of $${budget.amount.toFixed(2)}</div>
+                                            <div class="budget-progress">
+                                                <div class="budget-progress-bar" style="width: ${percentage}%"></div>
+                                            </div>
+                                        </div>
+                                        <button class="delete-budget" data-category="${budget.category}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    `;
+                                    
+                                    elements.budgetsList.appendChild(budgetItem);
+                                    
+                                    // Add event listener to delete button
+                                    budgetItem.querySelector('.delete-budget').addEventListener('click', function() {
+                                        deleteBudget(this.dataset.category)
+                                            .then(() => loadBudgets())
+                                            .catch(error => {
+                                                console.error('Error deleting budget:', error);
+                                                showToast('Error deleting budget', 'error');
+                                            });
+                                    });
+                                });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading budgets:', error);
+                        showToast('Error loading budgets', 'error');
+                    });
+            }
+
+            // Event Handlers
+            function handleExpenseSubmit(e) {
+                e.preventDefault();
+                
+                // Validate inputs
+                const category = elements.expenseCategory.value.trim();
+                const amount = parseFloat(elements.expenseAmount.value);
+                const date = elements.expenseDate.value;
+                const description = elements.expenseDescription.value.trim();
+                
+                if (!category || category.length < 2) {
+                    showError(elements.expenseCategory, "Category must be at least 2 characters");
+                    return;
+                }
+                
+                if (isNaN(amount) || amount <= 0) {
+                    showError(elements.expenseAmount, "Please enter a valid positive amount");
+                    return;
+                }
+                
+                if (!date) {
+                    showError(elements.expenseDate, "Please select a date");
+                    return;
+                }
+                
+                const expense = {
+                    id: Date.now(),
+                    date,
+                    category,
+                    amount,
+                    description,
+                    monthYear: getMonthYearFromDate(date)
+                };
+
+                saveExpense(expense)
+                    .then(() => {
+                        showToast("Expense added successfully!");
+                        elements.expenseForm.reset();
+                        elements.expenseDate.valueAsDate = new Date();
+                        loadInitialData();
+                    })
+                    .catch(error => {
+                        console.error('Error saving expense:', error);
+                        showToast('Error saving expense', 'error');
+                    });
+            }
+
+            function handleGenerateReport() {
+                const startDate = elements.reportStartDate.value;
+                const endDate = elements.reportEndDate.value;
+                
+                if (!startDate || !endDate) {
+                    showToast('Please select both start and end dates', 'error');
+                    return;
+                }
+                
+                if (new Date(startDate) > new Date(endDate)) {
+                    showToast('Start date must be before end date', 'error');
+                    return;
+                }
+                
+                showToast('Generating report...');
+                
+                getExpensesByDateRange(startDate, endDate)
+                    .then(expenses => {
+                        generateReportWithWorker(startDate, endDate)
+                            .then(report => {
+                                displayReportResults(report, startDate, endDate, expenses);
+                                showToast('Report generated successfully!');
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error generating report:', error);
+                        showToast('Error generating report', 'error');
+                    });
+            }
+
+            function displayReportResults(report, startDate, endDate, expenses) {
+                if (report.count === 0) {
+                    elements.reportResults.innerHTML = '<div class="no-data">No expenses found in the selected date range</div>';
+                    return;
+                }
+                
+                // Get selected columns
+                const selectedColumns = Array.from(document.querySelectorAll('input[name="reportColumns"]:checked'))
+                    .map(checkbox => checkbox.value);
+                
+                const categories = Object.keys(report.byCategory);
+                categories.sort((a, b) => report.byCategory[b] - report.byCategory[a]);
+                
+                // Create HTML table
+                let html = `
+                    <div class="report-summary">
+                        <h4>Report Summary</h4>
+                        <p><strong>Date Range:</strong> ${formatDate(startDate)} to ${formatDate(endDate)}</p>
+                        <p><strong>Total Expenses:</strong> $${report.total.toFixed(2)}</p>
+                        <p><strong>Number of Transactions:</strong> ${report.count}</p>
+                        <p><strong>Average Daily Spending:</strong> $${(report.total / daysBetween(startDate, endDate)).toFixed(2)}</p>
+                    </div>
+                    
+                    <div class="category-breakdown">
+                        <h4>Category Breakdown</h4>
+                        <ul style="list-style-type: none; padding-left: 0;">
+                `;
+                
+                categories.forEach(category => {
+                    const amount = report.byCategory[category];
+                    const percentage = (amount / report.total * 100).toFixed(1);
+                    html += `
+                        <li style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+                            <span>${category}</span>
+                            <span>$${amount.toFixed(2)} (${percentage}%)</span>
+                        </li>
+                    `;
+                });
+                
+                html += `
+                        </ul>
+                    </div>
+                    
+                    <h4>Expense Details</h4>
+                    <div style="overflow-x: auto;">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    ${selectedColumns.map(col => 
+                                        `<th>${
+                                            col === 'serial' ? '#' : 
+                                            col === 'date' ? 'Date' : 
+                                            col === 'category' ? 'Category' : 
+                                            col === 'amount' ? 'Amount' : 
+                                            'Description'
+                                        }</th>`
+                                    ).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${expenses.map((expense, index) => `
+                                    <tr>
+                                        ${selectedColumns.map(col => `
+                                            <td>${
+                                                col === 'serial' ? (index + 1) :
+                                                col === 'date' ? formatDate(expense.date) :
+                                                col === 'category' ? expense.category :
+                                                col === 'amount' ? `$${expense.amount.toFixed(2)}` :
+                                                expense.description || '-'
+                                            }</td>
+                                        `).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <button id="downloadPdf" class="download-btn" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-file-pdf"></i> Download PDF Report
+                    </button>
+                `;
+                
+                elements.reportResults.innerHTML = html;
+                
+                // Add event listener to the download button
+                document.getElementById('downloadPdf').addEventListener('click', function() {
+                    downloadPdfReport(report, startDate, endDate, expenses, selectedColumns);
+                });
+            }
+
+            function downloadPdfReport(report, startDate, endDate, expenses, selectedColumns) {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Add title
+                doc.setFontSize(20);
+                doc.setTextColor(74, 111, 165);
+                doc.text('MOR Expense Report', 105, 20, { align: 'center' });
+                
+                // Report details
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Date Range: ${formatDate(startDate)} to ${formatDate(endDate)}`, 14, 30);
+                doc.text(`Total Expenses: $${report.total.toFixed(2)}`, 14, 40);
+                doc.text(`Number of Transactions: ${report.count}`, 14, 50);
+                doc.text(`Average Daily: $${(report.total / daysBetween(startDate, endDate)).toFixed(2)}`, 14, 60);
+                
+                // Category breakdown
+                const categories = Object.keys(report.byCategory);
+                categories.sort((a, b) => report.byCategory[b] - report.byCategory[a]);
+                
+                doc.text('Category Breakdown:', 14, 75);
+                let yPos = 80;
+                categories.forEach(category => {
+                    const amount = report.byCategory[category];
+                    const percentage = (amount / report.total * 100).toFixed(1);
+                    doc.text(`${category}: $${amount.toFixed(2)} (${percentage}%)`, 20, yPos);
+                    yPos += 7;
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                });
+                
+                // Expense table
+                const headers = selectedColumns.map(col => 
+                    col === 'serial' ? '#' : 
+                    col === 'date' ? 'Date' : 
+                    col === 'category' ? 'Category' : 
+                    col === 'amount' ? 'Amount' : 
+                    'Description'
+                );
+                
+                const data = expenses.map((expense, index) => 
+                    selectedColumns.map(col => 
+                        col === 'serial' ? (index + 1).toString() :
+                        col === 'date' ? formatDate(expense.date) :
+                        col === 'category' ? expense.category :
+                        col === 'amount' ? `$${expense.amount.toFixed(2)}` :
+                        expense.description || '-'
+                    )
+                );
+                
+                doc.autoTable({
+                    startY: yPos + 10,
+                    head: [headers],
+                    body: data,
+                    margin: { top: yPos + 10 },
+                    styles: {
+                        cellPadding: 5,
+                        fontSize: 10,
+                        valign: 'middle'
+                    },
+                    headStyles: {
+                        fillColor: [74, 111, 165],
+                        textColor: [255, 255, 255],
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: {
+                        fillColor: [240, 240, 240]
+                    }
+                });
+                
+                // Save the PDF
+                doc.save(`MOR_Expense_Report_${startDate}_to_${endDate}.pdf`);
+            }
+
+            function handleSaveBalance() {
+                const balance = parseFloat(elements.initialBalance.value);
+                
+                if (isNaN(balance) || balance < 0) {
+                    showToast('Please enter a valid balance amount', 'error');
+                    return;
+                }
+                
+                const balanceEntry = {
+                    id: Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    amount: balance
+                };
+                
+                saveBalanceHistory(balanceEntry)
+                    .then(() => {
+                        setCurrentBalance(balance);
+                        elements.initialBalance.value = '';
+                        elements.initialBalance.placeholder = `Current: $${balance.toFixed(2)}`;
+                        showToast('Balance saved successfully!');
+                        updateMenuSummary();
+                        loadBalanceHistory();
+                    })
+                    .catch(error => {
+                        console.error('Error saving balance:', error);
+                        showToast('Error saving balance', 'error');
+                    });
+            }
+
+            function handleSaveBudget() {
+                const category = elements.budgetCategory.value.trim();
+                const amount = parseFloat(elements.budgetAmount.value);
+                
+                if (!category || category.length < 2) {
+                    showToast('Category must be at least 2 characters', 'error');
+                    return;
+                }
+                
+                if (isNaN(amount) || amount <= 0) {
+                    showToast('Please enter a valid budget amount', 'error');
+                    return;
+                }
+                
+                const budget = {
+                    category,
+                    amount
+                };
+                
+                saveBudget(budget)
+                    .then(() => {
+                        elements.budgetCategory.value = '';
+                        elements.budgetAmount.value = '';
+                        showToast('Budget saved successfully!');
+                        loadBudgets();
+                    })
+                    .catch(error => {
+                        console.error('Error saving budget:', error);
+                        showToast('Error saving budget', 'error');
+                    });
+            }
+
+            function handleExportData() {
+                Promise.all([
+                    getAllExpenses(),
+                    getBalanceHistory(),
+                    getBudgets()
+                ]).then(([expenses, balanceHistory, budgets]) => {
+                    const data = {
+                        expenses,
+                        balanceHistory,
+                        budgets,
+                        currentBalance: getCurrentBalance(),
+                        version: 1,
+                        exportedAt: new Date().toISOString()
+                    };
+                    
+                    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `mor-expense-backup-${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    
+                    showToast('Data exported successfully!');
+                }).catch(error => {
+                    console.error('Error exporting data:', error);
+                    showToast('Error exporting data', 'error');
+                });
+            }
+
+            function handleImportData(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (!data.expenses || !data.balanceHistory || !data.budgets) {
+                            throw new Error('Invalid backup file format');
+                        }
+                        
+                        if (confirm('This will overwrite all current data. Continue?')) {
+                            showToast('Importing data...');
+                            
+                            clearAllData()
+                                .then(() => {
+                                    const promises = [
+                                        ...data.expenses.map(expense => saveExpense(expense)),
+                                        ...data.balanceHistory.map(balance => saveBalanceHistory(balance)),
+                                        ...data.budgets.map(budget => saveBudget(budget))
+                                    ];
+                                    
+                                    return Promise.all(promises);
+                                })
+                                .then(() => {
+                                    if (data.currentBalance) {
+                                        setCurrentBalance(data.currentBalance);
+                                    }
+                                    showToast('Data imported successfully!');
+                                    location.reload();
+                                })
+                                .catch(error => {
+                                    console.error('Error importing data:', error);
+                                    showToast('Error importing data', 'error');
+                                });
+                        }
+                    } catch (e) {
+                        console.error('Error parsing backup file:', e);
+                        showToast('Invalid backup file', 'error');
+                    }
+                };
+                
+                reader.readAsText(file);
+                event.target.value = ''; // Reset file input
+            }
+
+            function handleClearData() {
+                if (confirm('This will permanently delete all your data. Are you sure?')) {
+                    clearAllData()
+                        .then(() => {
+                            localStorage.removeItem('currentBalance');
+                            showToast('All data cleared successfully!');
+                            location.reload();
+                        })
+                        .catch(error => {
+                            console.error('Error clearing data:', error);
+                            showToast('Error clearing data', 'error');
+                        });
+                }
+            }
+
+            // Helper Functions
+            function showError(input, message) {
+                const formGroup = input.closest('.form-group');
+                let error = formGroup.querySelector('.error-message');
+                
+                if (!error) {
+                    error = document.createElement('div');
+                    error.className = 'error-message';
+                    formGroup.appendChild(error);
+                }
+                
+                error.textContent = message;
+                input.classList.add('error');
+                
+                setTimeout(() => {
+                    error.remove();
+                    input.classList.remove('error');
+                }, 3000);
+            }
+
+            function showToast(message, type = "success") {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => toast.remove(), 3000);
+            }
+
+            function getCurrentMonthYear() {
+                const date = new Date();
+                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            function getMonthYearFromDate(dateString) {
+                const date = new Date(dateString);
+                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            function formatDate(dateString) {
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                return new Date(dateString).toLocaleDateString(undefined, options);
+            }
+
+            function daysBetween(startDate, endDate) {
+                const diff = new Date(endDate) - new Date(startDate);
+                return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+            }
+
+            // Public API
+            return {
+                init
+            };
+        })();
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            MORExpenseTracker.init();
+        });
+    </script>
+</body>
+</html>
